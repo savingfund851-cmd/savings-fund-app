@@ -1,4 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { db } from "./firebase";
+import {
+  collection, onSnapshot, doc,
+  setDoc, deleteDoc, updateDoc
+} from "firebase/firestore";
 
 // ── Constants & Translations ────────────────────────────────────────────────
 const MONTHS = Array.from({length:12},(_,i)=>String(i+1).padStart(2,"0"));
