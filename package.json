@@ -1,28 +1,14 @@
-{
-  "name": "savings-fund",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "firebase": "^10.12.0",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6"
-  },
-  "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^4.3.4",
-    "eslint": "^9.0.0",
-    "eslint-plugin-react-hooks": "^5.0.0",
-    "eslint-plugin-react-refresh": "^0.4.19",
-    "globals": "^15.0.0",
-    "vite": "^5.4.0"
-  }
-}
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCAHzImH6vzc3OnESwYs4--HjRRo87vU3w",
+  authDomain: "savings-fund-c663e.firebaseapp.com",
+  projectId: "savings-fund-c663e",
+  storageBucket: "savings-fund-c663e.firebasestorage.app",
+  messagingSenderId: "889259554301",
+  appId: "1:889259554301:web:48bdef2983c3c29a865594"
+};
+
+const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
