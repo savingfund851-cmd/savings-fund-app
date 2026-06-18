@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { loadAllData, saveMember, removeMember, savePayment, updatePaymentStatus, removePayment, saveAdmin, removeAdmin, saveNotice, removeNotice, saveConfig } from "./firebaseService.js";
 
 // ── Constants & Translations ────────────────────────────────────────────────
 const MONTHS = Array.from({length:12},(_,i)=>String(i+1).padStart(2,"0"));
@@ -363,22 +364,25 @@ const AdminPayments = ({members,payments,setPayments,showToast,lang,role,themeCo
     return statusOk && yearOk && monthOk;
   });
 
-  const approve = (id) => {
+  const approve = async (id) => {
     setPayments(prev=>prev.map(p=>p.paymentId===id?{...p,status:"verified"}:p));
     setDetailPay(null);
     showToast(lang==="bn"?"পেমেন্ট সফলভাবে অনুমোদিত!":"Payment approved successfully!");
+    await updatePaymentStatus(id, "verified");
   };
 
-  const reject = (id) => {
+  const reject = async (id) => {
     setPayments(prev=>prev.filter(p=>p.paymentId!==id));
     setDetailPay(null);
     showToast(lang==="bn"?"পেমেন্ট রিজেক্ট করা হয়েছে":"Payment rejected","error");
+    await removePayment(id);
   };
 
-  const deletePayment = (id) => {
+  const deletePayment = async (id) => {
     if(window.confirm(lang==="bn"?"পেমেন্টটি স্থায়ীভাবে ডিলিট করতে চান?":"Delete this payment permanently?")) {
       setPayments(prev=>prev.filter(p=>p.paymentId!==id));
       showToast(lang==="bn"?"পেমেন্ট ডিলিট করা হয়েছে":"Payment deleted successfully","error");
+      await removePayment(id);
     }
   };
 
@@ -471,24 +475,29 @@ const AdminMembers = ({members,setMembers,showToast,lang,role,themeColor}) => {
 
   const filtered = members.filter(m=>m.name.toLowerCase().includes(search.toLowerCase())||m.phone.includes(search)||m.memberId.includes(search));
 
-  const save = () => {
+  const save = async () => {
     if(!form.name||!form.phone) return showToast("Name & Phone required","error");
     if(!form.password) return showToast("Password required", "error");
     
+    let memberToSave;
     if(modal==="add"){
-      setMembers(prev=>[...prev,{...form,memberId:genId("M",prev),joinDate:today()}]);
+      memberToSave = {...form,memberId:genId("M",members),joinDate:today()};
+      setMembers(prev=>[...prev,memberToSave]);
       showToast(lang==="bn"?"সদস্য সফলভাবে যোগ হয়েছে":"Member Added Successfully");
     } else {
+      memberToSave = form;
       setMembers(prev=>prev.map(m=>m.memberId===form.memberId?form:m));
       showToast(lang==="bn"?"তথ্য আপডেট হয়েছে":"Member Info Updated");
     }
     setModal(null);
+    await saveMember(memberToSave);
   };
 
-  const deleteMember = (id) => {
+  const deleteMember = async (id) => {
     if(window.confirm(lang==="bn"?"সদস্যকে স্থায়ীভাবে ডিলিট করতে চান?":"Delete this member permanently?")) {
       setMembers(prev=>prev.filter(m=>m.memberId!==id));
       showToast(lang==="bn"?"সদস্য মুছে ফেলা হয়েছে":"Member Deleted","error");
+      await removeMember(id);
     }
   };
 
@@ -574,22 +583,27 @@ const SuperAdminList = ({admins, setAdmins, showToast, lang, themeColor}) => {
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState({});
 
-  const saveAdmin = () => {
+  const saveAdmin = async () => {
     if(!form.name || !form.phone || !form.password) return showToast("All fields are required", "error");
+    let adminToSave;
     if(modal === "add") {
-      setAdmins(prev => [...prev, { ...form, adminId: genId("ADM", prev), status: "active" }]);
+      adminToSave = { ...form, adminId: genId("ADM", admins), status: "active" };
+      setAdmins(prev => [...prev, adminToSave]);
       showToast(lang==="bn"?"নতুন অ্যাডমিন সফলভাবে তৈরি হয়েছে":"New Admin Created Successfully");
     } else {
+      adminToSave = form;
       setAdmins(prev => prev.map(a => a.adminId === form.adminId ? form : a));
       showToast(lang==="bn"?"অ্যাডমিন তথ্য আপডেট হয়েছে":"Admin Data Updated");
     }
     setModal(null);
+    await saveAdmin(adminToSave);
   };
 
-  const deleteAdmin = (id) => {
+  const deleteAdmin = async (id) => {
     if(window.confirm(lang==="bn"?"অ্যাডমিনকে ডিলিট করতে চান?":"Delete this Admin?")) {
       setAdmins(prev => prev.filter(a => a.adminId !== id));
       showToast(lang==="bn"?"অ্যাডমিন রিমুভ করা হয়েছে":"Admin Removed", "error");
+      await removeAdmin(id);
     }
   };
 
@@ -671,7 +685,7 @@ const SuperAdminCustomize = ({custom, setCustom, showToast, lang, themeColor}) =
         </select>
       </div>
 
-      <Btn themeColor={themeColor} onClick={()=>showToast(lang==="bn"?"কনফিগারেশন সেভ হয়েছে!":"Branding Configuration Saved!")} style={{width:"100%"}}>Save Configurations</Btn>
+      <Btn themeColor={themeColor} onClick={async ()=>{showToast(lang==="bn"?"কনফিগারেশন সেভ হয়েছে!":"Branding Configuration Saved!"); await saveConfig(custom);}} style={{width:"100%"}}>Save Configurations</Btn>
     </Card>
   );
 };
@@ -831,12 +845,14 @@ const AdminReports = ({members, payments, lang, custom}) => {
 const AdminNotices = ({notices, setNotices, showToast, themeColor}) => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const handlePublish = (e) => {
+  const handlePublish = async (e) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) return showToast("Title & Content Required", "error");
-    setNotices([{ noticeId: genId("N", notices), title, content, date: today() }, ...notices]);
+    const newNotice = { noticeId: genId("N", notices), title, content, date: today() };
+    setNotices([newNotice, ...notices]);
     showToast("নতুন নোটিশ পাবলিশ করা হয়েছে!");
     setTitle(""); setContent("");
+    await saveNotice(newNotice);
   };
   return (
     <div style={{display:"grid", gridTemplateColumns: "1fr 1fr", gap: 24, flexWrap:"wrap"}}>
@@ -857,7 +873,7 @@ const AdminNotices = ({notices, setNotices, showToast, themeColor}) => {
           <Card key={n.noticeId} style={{marginBottom:12, borderLeft: `4px solid ${themeColor}`}}>
             <div style={{display:"flex", justifyContent:"space-between"}}>
               <h4 style={{margin:0}}>{n.title}</h4>
-              <button onClick={()=>{setNotices(notices.filter(x=>x.noticeId!==n.noticeId)); showToast("Deleted", "error");}} style={{border:"none", background:"none", color:"#dc2626", cursor:"pointer", fontSize:12}}>মুছে ফেলুন</button>
+              <button onClick={async ()=>{setNotices(notices.filter(x=>x.noticeId!==n.noticeId)); showToast("Deleted", "error"); await removeNotice(n.noticeId);}} style={{border:"none", background:"none", color:"#dc2626", cursor:"pointer", fontSize:12}}>মুছে ফেলুন</button>
             </div>
             <p style={{fontSize:13, color:"#4b5563"}}>{n.content}</p>
           </Card>
@@ -867,14 +883,15 @@ const AdminNotices = ({notices, setNotices, showToast, themeColor}) => {
   );
 };
 
-const PasswordSettingsGlobal = ({currentPassword, setPassword, showToast, labelText}) => {
+const PasswordSettingsGlobal = ({currentPassword, setPassword, showToast, labelText, onSave}) => {
   const [oldPw, setOldPw] = useState("");
   const [newPw, setNewPw] = useState("");
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     if(oldPw !== currentPassword) return showToast("Current password incorrect", "error");
     setPassword(newPw);
     showToast("Password updated successfully");
     setOldPw(""); setNewPw("");
+    if (onSave) await onSave(newPw);
   };
   return (
     <Card style={{maxWidth:440}}>
@@ -926,17 +943,19 @@ const MemberDashboard = ({member,payments,notices,lang,custom}) => {
   );
 };
 
-const MemberPayment = ({member,setPayments,showToast,lang,themeColor}) => {
+const MemberPayment = ({member,payments,setPayments,showToast,lang,themeColor}) => {
   const [selYear,setSelYear]   = useState("2026");
   const [selMonth,setSelMonth] = useState("06");
   const [amount,setAmount]     = useState(member.monthlyContribution);
   const [trxId,setTrxId]       = useState("");
 
-  const submit = () => {
+  const submit = async () => {
     if(!trxId.trim()) return showToast("TrxID Required","error");
-    setPayments(prev=>[...prev,{paymentId:genId("P",prev),memberId:member.memberId,amount,month:toYM(selYear,selMonth),trxId,paymentMethod:"bKash",paymentDate:today(),status:"pending"}]);
+    const newPayment = {paymentId:genId("P",payments),memberId:member.memberId,amount,month:toYM(selYear,selMonth),trxId,paymentMethod:"bKash",paymentDate:today(),status:"pending"};
+    setPayments(prev=>[...prev,newPayment]);
     showToast("Payment submitted for approval");
     setTrxId("");
+    await savePayment(newPayment);
   };
 
   return (
@@ -980,10 +999,31 @@ export default function App() {
   const [adminPassword, setAdminPassword] = useState("admin123");
 
   // Single Input Form Controls
+  const [loading, setLoading] = useState(true);
   const [loginId, setLoginId] = useState("");
   const [loginPw, setLoginPw] = useState("");
 
   const showToast = (msg, type="success") => { setToast({msg, type}); setTimeout(()=>setToast(null), 3500); };
+
+  useEffect(() => {
+    loadAllData().then(data => {
+      if (data.members.length > 0) setMembers(data.members);
+      if (data.payments.length > 0) setPayments(data.payments);
+      if (data.notices.length > 0) setNotices(data.notices);
+      if (data.admins.length > 0) setAdmins(data.admins);
+      
+      if (data.config) {
+        setCustom(data.config);
+        if (data.config.superPassword) setSuperPassword(data.config.superPassword);
+        if (data.config.adminPassword) setAdminPassword(data.config.adminPassword);
+      }
+      setLoading(false);
+    }).catch(err => {
+      console.error("Failed to load data:", err);
+      showToast("Failed to load data from server", "error");
+      setLoading(false);
+    });
+  }, []);
 
   // ── Smart Auto-Login Handler ──────────────────────────────────────────────
   const handleAutoLogin = (e) => {
@@ -1093,6 +1133,14 @@ export default function App() {
     </div>
   );
 
+  if (loading) {
+    return (
+      <div style={{minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:"#f8fafc", fontSize:18, fontWeight:700, color:"#1e1b4b"}}>
+        Loading Data...
+      </div>
+    );
+  }
+
   // ── Main Layout (Dashboard) ────────────────────────────────────────────────
   return (
     <div style={{minHeight:"100vh", background:"#f8fafc", fontSize: custom.fontSize}}>
@@ -1129,11 +1177,11 @@ export default function App() {
         
         {role === "superadmin" && activeTab === "admins"    && <SuperAdminList admins={admins} setAdmins={setAdmins} showToast={showToast} lang={lang} themeColor={custom.themeColor}/>}
         {role === "superadmin" && activeTab === "customize" && <SuperAdminCustomize custom={custom} setCustom={setCustom} showToast={showToast} lang={lang} themeColor={custom.themeColor}/>}
-        {role === "superadmin" && activeTab === "security"  && <PasswordSettingsGlobal currentPassword={superPassword} setPassword={setSuperPassword} showToast={showToast} labelText="Change Super Admin Password"/>}
+        {role === "superadmin" && activeTab === "security"  && <PasswordSettingsGlobal currentPassword={superPassword} setPassword={setSuperPassword} showToast={showToast} labelText="Change Super Admin Password" onSave={async (pw)=>{const c={...custom,superPassword:pw}; setCustom(c); await saveConfig(c);}}/>}
         
         {role === "member" && activeTab === "dashboard" && <MemberDashboard member={currentMemberData} payments={payments} notices={notices} lang={lang} custom={custom}/>}
-        {role === "member" && activeTab === "pay"       && <MemberPayment  member={currentMemberData} setPayments={setPayments} showToast={showToast} lang={lang} themeColor={custom.themeColor}/>}
-        {role === "member" && activeTab === "security"  && <PasswordSettingsGlobal currentPassword={currentMemberData?.password} setPassword={(newPw) => setMembers(prev => prev.map(m => m.memberId === currentMemberData.memberId ? {...m, password: newPw} : m))} showToast={showToast} labelText={t.memberSecurityTab}/>}
+        {role === "member" && activeTab === "pay"       && <MemberPayment  member={currentMemberData} payments={payments} setPayments={setPayments} showToast={showToast} lang={lang} themeColor={custom.themeColor}/>}
+        {role === "member" && activeTab === "security"  && <PasswordSettingsGlobal currentPassword={currentMemberData?.password} setPassword={(newPw) => {const mem = {...currentMemberData, password: newPw}; setMembers(prev => prev.map(m => m.memberId === mem.memberId ? mem : m)); saveMember(mem);}} showToast={showToast} labelText={t.memberSecurityTab}/>}
       </div>
 
       {toast && <Toast msg={toast.msg} type={toast.type}/>}
