@@ -962,7 +962,23 @@ export default function App() {
   const [lang, setLang] = useState("bn"); 
   const [role, setRole] = useState(null); // 'superadmin' | 'admin' | 'member'
   const [activeMember, setActiveMember] = useState(null);
-  
+  // ── Firebase Real-time Sync ──────────────────────────────────────────────
+useEffect(() => {
+  const unsubMembers = onSnapshot(collection(db, "members"), snap => {
+    setMembers(snap.docs.map(d => d.data()));
+  });
+  const unsubPayments = onSnapshot(collection(db, "payments"), snap => {
+    setPayments(snap.docs.map(d => d.data()));
+  });
+  const unsubNotices = onSnapshot(collection(db, "notices"), snap => {
+    setNotices(snap.docs.map(d => d.data()));
+  });
+  const unsubAdmins = onSnapshot(collection(db, "admins"), snap => {
+    const data = snap.docs.map(d => d.data());
+    if (data.length > 0) setAdmins(data);
+  });
+  return () => { unsubMembers(); unsubPayments(); unsubNotices(); unsubAdmins(); };
+}, []);
   // App Global Database
   const [members, setMembers] = useState(SEED_MEMBERS);
   const [payments, setPayments] = useState(SEED_PAYMENTS);
