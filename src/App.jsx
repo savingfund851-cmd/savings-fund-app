@@ -948,10 +948,11 @@ const MemberPayment = ({member,payments,setPayments,showToast,lang,themeColor}) 
   const [selMonth,setSelMonth] = useState("06");
   const [amount,setAmount]     = useState(member.monthlyContribution);
   const [trxId,setTrxId]       = useState("");
+  const [paymentMethod,setPaymentMethod] = useState("bKash");
 
   const submit = async () => {
     if(!trxId.trim()) return showToast("TrxID Required","error");
-    const newPayment = {paymentId:genId("P",payments),memberId:member.memberId,amount,month:toYM(selYear,selMonth),trxId,paymentMethod:"bKash",paymentDate:today(),status:"pending"};
+    const newPayment = {paymentId:genId("P",payments),memberId:member.memberId,amount,month:toYM(selYear,selMonth),trxId,paymentMethod,paymentDate:today(),status:"pending"};
     setPayments(prev=>[...prev,newPayment]);
     showToast("Payment submitted for approval");
     setTrxId("");
@@ -962,6 +963,15 @@ const MemberPayment = ({member,payments,setPayments,showToast,lang,themeColor}) 
     <Card style={{maxWidth:480}}>
       <MonthYearSelect label="Month *" year={selYear} month={selMonth} onYear={setSelYear} onMonth={setSelMonth} lang={lang}/>
       <Input label="Amount *" type="number" value={amount} onChange={e=>setAmount(+e.target.value)}/>
+      <div style={{marginBottom:14}}>
+        <label style={{display:"block", fontSize:13, fontWeight:600, marginBottom:4, color:"#374151"}}>Payment Method *</label>
+        <select value={paymentMethod} onChange={e=>setPaymentMethod(e.target.value)} style={{width:"100%", height:42, border:"1.5px solid #e5e7eb", borderRadius:8, padding:"0 12px", fontSize:14, background:"#f9fafb", outline:"none"}}>
+          <option value="bKash">bKash</option>
+          <option value="Nagad">Nagad</option>
+          <option value="Rocket">Rocket</option>
+          <option value="Bank">Bank Transfer</option>
+        </select>
+      </div>
       <Input label="Transaction ID *" value={trxId} onChange={e=>setTrxId(e.target.value)}/>
       <Btn themeColor={themeColor} onClick={submit} style={{width:"100%"}}>Submit Payment</Btn>
     </Card>
