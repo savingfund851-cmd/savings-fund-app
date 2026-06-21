@@ -60,6 +60,7 @@ const TRANSLATIONS = {
     newMemberBtn: "+ নতুন সদস্য",
     newAdminBtn: "+ নতুন অ্যাডমিন",
     id: "আইডি",
+    bloodGroup: "রক্তের গ্রুপ",
     name: "নাম",
     phone: "ফোন",
     actions: "কার্যক্রম",
@@ -127,6 +128,7 @@ const TRANSLATIONS = {
     newMemberBtn: "+ New Member",
     newAdminBtn: "+ New Admin",
     id: "ID",
+    bloodGroup: "Blood Group",
     name: "Name",
     phone: "Phone",
     actions: "Actions",
@@ -516,7 +518,7 @@ const AdminMembers = ({members,setMembers,showToast,lang,role,themeColor}) => {
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
           <thead>
             <tr style={{background:"#f9fafb"}}>
-              {[t.id, t.name, t.phone, t.password, t.monthlyContribution, t.status, t.actions].map(h=>(
+              {[t.id, t.name, t.phone, t.bloodGroup, t.password, t.monthlyContribution, t.status, t.actions].map(h=>(
                 <th key={h} style={{padding:"9px 12px",textAlign:"left",color:"#6b7280",fontWeight:600}}>{h}</th>
               ))}
             </tr>
@@ -527,6 +529,7 @@ const AdminMembers = ({members,setMembers,showToast,lang,role,themeColor}) => {
                 <td style={{padding:"10px 12px",color:"#6b7280",fontFamily:"monospace"}}>{m.memberId}</td>
                 <td style={{padding:"10px 12px",fontWeight:600}}><span className="animated-name">{m.name}</span></td>
                 <td style={{padding:"10px 12px"}}>{m.phone}</td>
+                <td style={{padding:"10px 12px",fontWeight:600,color:"#dc2626"}}>{m.bloodGroup || "-"}</td>
                 <td style={{padding:"10px 12px",fontFamily:"monospace",color:themeColor}}>{m.password}</td>
                 <td style={{padding:"10px 12px",fontWeight:700,color:"#059669"}}>{fmt(m.monthlyContribution, lang)}</td>
                 <td style={{padding:"10px 12px"}}><Badge status={m.status} lang={lang}/></td>
@@ -547,6 +550,15 @@ const AdminMembers = ({members,setMembers,showToast,lang,role,themeColor}) => {
         <Modal title={modal==="add"?"New Member":"Member Management"} onClose={()=>setModal(null)}>
           <Input label="Name *" value={form.name||""} onChange={e=>setForm(p=>({...p,name:e.target.value}))}/>
           <Input label="Phone *" value={form.phone||""} onChange={e=>setForm(p=>({...p,phone:e.target.value}))}/>
+          
+          <div style={{marginBottom:14}}>
+            <label style={{display:"block", fontSize:13, fontWeight:600, marginBottom:4, color:"#374151"}}>{t.bloodGroup}</label>
+            <select value={form.bloodGroup||""} onChange={e=>setForm(p=>({...p,bloodGroup:e.target.value}))} style={{width:"100%", height:42, border:"1.5px solid #e5e7eb", borderRadius:8, padding:"0 12px", fontSize:14, background:"#f9fafb", outline:"none"}}>
+              <option value="">Select Blood Group</option>
+              {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map(bg => <option key={bg} value={bg}>{bg}</option>)}
+            </select>
+          </div>
+
           <Input label="Password *" value={form.password||""} onChange={e=>setForm(p=>({...p,password:e.target.value}))}/>
           <Input label="Monthly Fee" type="number" value={form.monthlyContribution||""} onChange={e=>setForm(p=>({...p,monthlyContribution:+e.target.value}))}/>
           <div style={{marginBottom:14}}>
@@ -915,7 +927,7 @@ const MemberDashboard = ({member,payments,notices,lang,custom}) => {
       <div style={{background: `linear-gradient(135deg, ${custom.themeColor}, #7c3aed)`,borderRadius:16,padding:"24px 28px",color:"#fff",marginBottom:24}}>
         <div style={{fontSize:13,opacity:.8,marginBottom:4}}>{t.welcome}</div>
         <div style={{fontSize:24,fontWeight:800}} className="animated-name">{member.name}</div>
-        <div style={{fontSize:13,opacity:.7,marginTop:4}}>{t.memberId}: {member.memberId} · {t.joinDate}: {member.joinDate}</div>
+        <div style={{fontSize:13,opacity:.7,marginTop:4}}>{t.memberId}: {member.memberId} · {t.joinDate}: {member.joinDate} {member.bloodGroup ? `· ${t.bloodGroup}: ${member.bloodGroup}` : ""}</div>
         <div style={{marginTop:20,display:"flex",gap:28,flexWrap:"wrap"}}>
           <div><div style={{fontSize:11,opacity:.7}}>{t.totalDeposit}</div><div style={{fontSize:22,fontWeight:800}}>{fmt(totalDeposit, lang)}</div></div>
           <div><div style={{fontSize:11,opacity:.7}}>{t.monthlyContribution}</div><div style={{fontSize:22,fontWeight:800}}>{fmt(member.monthlyContribution, lang)}</div></div>
