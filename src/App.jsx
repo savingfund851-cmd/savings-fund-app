@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { loadAllData, saveMember, removeMember, savePayment, updatePaymentStatus, removePayment, saveAdmin, removeAdmin, saveNotice, removeNotice, saveConfig } from "./firebaseService.js";
+import { loadAllData, subscribeToAllData, saveMember, removeMember, savePayment, updatePaymentStatus, removePayment, saveAdmin, removeAdmin, saveNotice, removeNotice, saveConfig } from "./firebaseService.js";
 
 // ── Constants & Translations ────────────────────────────────────────────────
 const MONTHS = Array.from({length:12},(_,i)=>String(i+1).padStart(2,"0"));
@@ -1056,7 +1056,7 @@ export default function App() {
   const showToast = (msg, type="success") => { setToast({msg, type}); setTimeout(()=>setToast(null), 3500); };
 
   useEffect(() => {
-    loadAllData().then(data => {
+    const unsubscribe = subscribeToAllData(data => {
       if (data.members.length > 0) setMembers(data.members);
       if (data.payments.length > 0) setPayments(data.payments);
       if (data.notices.length > 0) setNotices(data.notices);
@@ -1068,11 +1068,9 @@ export default function App() {
         if (data.config.adminPassword) setAdminPassword(data.config.adminPassword);
       }
       setLoading(false);
-    }).catch(err => {
-      console.error("Failed to load data:", err);
-      showToast("Failed to load data from server", "error");
-      setLoading(false);
     });
+
+    return () => unsubscribe();
   }, []);
 
   // ── Smart Auto-Login Handler ──────────────────────────────────────────────

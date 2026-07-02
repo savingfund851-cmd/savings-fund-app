@@ -7,6 +7,7 @@ import {
   setDoc,
   deleteDoc,
   updateDoc,
+  onSnapshot
 } from "firebase/firestore";
 
 // ── Collection References ─────────────────────────────────────────────
@@ -55,6 +56,46 @@ export async function loadAllData() {
   }
 
   return { members, payments, notices, admins, config };
+}
+
+// ── Realtime Listener ──────────────────────────────────────────────────
+export function subscribeToAllData(onUpdate) {
+  let data = { members: [], payments: [], notices: [], admins: [], config: null };
+
+  const unsubMembers = onSnapshot(collection(db, COLLECTIONS.members), (snap) => {
+    data.members = snap.docs.map(d => d.data());
+    onUpdate({ ...data });
+  });
+
+  const unsubPayments = onSnapshot(collection(db, COLLECTIONS.payments), (snap) => {
+    data.payments = snap.docs.map(d => d.data());
+    onUpdate({ ...data });
+  });
+
+  const unsubNotices = onSnapshot(collection(db, COLLECTIONS.notices), (snap) => {
+    data.notices = snap.docs.map(d => d.data());
+    onUpdate({ ...data });
+  });
+
+  const unsubAdmins = onSnapshot(collection(db, COLLECTIONS.admins), (snap) => {
+    data.admins = snap.docs.map(d => d.data());
+    onUpdate({ ...data });
+  });
+
+  const unsubConfig = onSnapshot(doc(db, COLLECTIONS.config, "system"), (docSnap) => {
+    if (docSnap.exists()) {
+      data.config = docSnap.data();
+      onUpdate({ ...data });
+    }
+  });
+
+  return () => {
+    unsubMembers();
+    unsubPayments();
+    unsubNotices();
+    unsubAdmins();
+    unsubConfig();
+  };
 }
 
 // ── Members ───────────────────────────────────────────────────────────
