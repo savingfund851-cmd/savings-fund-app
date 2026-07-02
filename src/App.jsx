@@ -735,6 +735,34 @@ const AdminDues = ({members,payments,lang}) => {
         <StatCard label={t.totalDueMembers}  value={dues.length}        accent="#dc2626" icon="⚠️"/>
         <StatCard label={t.totalDueAmount}   value={fmt(total, lang)}   accent="#dc2626" icon="💸"/>
       </div>
+      
+      <Card>
+        <h3 style={{marginTop:0, marginBottom:16}}>⚠️ বকেয়া সদস্যদের তালিকা</h3>
+        {dues.length === 0 ? <p style={{fontSize:13, color:"#9ca3af", margin:0}}>এই মাসে কোনো বকেয়া নেই।</p> : (
+          <div style={{overflowX:"auto"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
+              <thead>
+                <tr style={{background:"#f9fafb", borderBottom:"2px solid #e5e7eb"}}>
+                  <th style={{padding:"8px 10px",textAlign:"left"}}>আইডি</th>
+                  <th style={{padding:"8px 10px",textAlign:"left"}}>নাম</th>
+                  <th style={{padding:"8px 10px",textAlign:"left"}}>ফোন</th>
+                  <th style={{padding:"8px 10px",textAlign:"right"}}>বকেয়া পরিমাণ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dues.map(m=>(
+                  <tr key={m.memberId} style={{borderBottom:"1px solid #f3f4f6"}}>
+                    <td style={{padding:"8px 10px",color:"#6b7280",fontFamily:"monospace"}}>{m.memberId}</td>
+                    <td style={{padding:"8px 10px",fontWeight:600}}>{m.name}</td>
+                    <td style={{padding:"8px 10px"}}>{m.phone}</td>
+                    <td style={{padding:"8px 10px",textAlign:"right",fontWeight:600,color:"#dc2626"}}>{fmt(m.monthlyContribution, lang)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
     </div>
   );
 };
