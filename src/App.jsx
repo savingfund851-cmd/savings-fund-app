@@ -166,14 +166,18 @@ const fmt = (n, lang) => {
 const today = () => new Date().toISOString().slice(0,10);
 const genId = (prefix, list) => {
   const max = list.reduce((acc, curr) => {
-    const idVal = curr.memberId || curr.paymentId || curr.noticeId || curr.adminId || "";
+    let idVal = "";
+    if (prefix === "M") idVal = curr.memberId || "";
+    else if (prefix === "P") idVal = curr.paymentId || "";
+    else if (prefix === "N") idVal = curr.noticeId || "";
+    else if (prefix === "ADM") idVal = curr.adminId || "";
+
     if (idVal.startsWith(prefix)) {
       const num = parseInt(idVal.replace(prefix, "")) || 0;
       return num > acc ? num : acc;
     }
     return acc;
   }, 0);
-  // Fallback to random if no numbers found to avoid collision
   return prefix + String(max + 1).padStart(3, "0");
 };
 
