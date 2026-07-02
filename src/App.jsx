@@ -164,7 +164,18 @@ const fmt = (n, lang) => {
   return "৳" + Number(n).toLocaleString("en-US");
 };
 const today = () => new Date().toISOString().slice(0,10);
-const genId = (prefix, list) => prefix + String(list.length+1).padStart(3,"0");
+const genId = (prefix, list) => {
+  const max = list.reduce((acc, curr) => {
+    const idVal = curr.memberId || curr.paymentId || curr.noticeId || curr.adminId || "";
+    if (idVal.startsWith(prefix)) {
+      const num = parseInt(idVal.replace(prefix, "")) || 0;
+      return num > acc ? num : acc;
+    }
+    return acc;
+  }, 0);
+  // Fallback to random if no numbers found to avoid collision
+  return prefix + String(max + 1).padStart(3, "0");
+};
 
 // ── Inject Animation Style ──────────────────────────────────────────────────
 const animationStyle = `
